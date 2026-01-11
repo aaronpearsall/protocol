@@ -1,0 +1,22 @@
+{
+  "name": "protocol",
+  "version": "1.0.0",
+  "description": "CrossFit fitness app with mobile and coach web interfaces",
+  "private": true,
+  "workspaces": [
+    "mobile",
+    "coach-web",
+    "api",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=mobile\" \"npm run dev --workspace=coach-web\"",
+    "build": "npm run build --workspace=coach-web",
+    "db:migrate": "npm run db:migrate --workspace=api",
+    "db:studio": "npm run db:studio --workspace=api"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+
