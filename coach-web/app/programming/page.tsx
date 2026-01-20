@@ -30,6 +30,8 @@ function ProgrammingCalendar() {
   const [workoutMode, setWorkoutMode] = useState<'select' | 'create'>('select');
   const [librarySearchQuery, setLibrarySearchQuery] = useState('');
   const [libraryFilterType, setLibraryFilterType] = useState<'all' | 'warmup' | 'main' | 'accessory' | 'cooldown'>('all');
+  const [showCreateDropdown, setShowCreateDropdown] = useState(false);
+  const [showMonthPicker, setShowMonthPicker] = useState(false);
 
   // Mock scheduled workouts - replace with API call
   const scheduledWorkouts: Record<string, { name: string; id: string }> = {
@@ -63,18 +65,38 @@ function ProgrammingCalendar() {
     }
   }, [searchParams, selectedDate]);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.create-dropdown-container')) {
+        setShowCreateDropdown(false);
+      }
+      if (!target.closest('.month-picker-container')) {
+        setShowMonthPicker(false);
+      }
+    };
+
+    if (showCreateDropdown || showMonthPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showCreateDropdown, showMonthPicker]);
+
   const handleDateClick = (date: Date) => {
-    console.log('Date clicked:', date);
-    setSelectedDate(date);
     const dateKey = format(date, 'yyyy-MM-dd');
+    
+    // Set the selected date
+    setSelectedDate(date);
+    setShowDatePicker(false); // Close date picker if open
+    
+    // Check if there's an existing workout
     if (scheduledWorkouts[dateKey]) {
-      // Show existing workout
-      console.log('Showing existing workout modal');
+      // Show existing workout modal
       setShowWorkoutModal(true);
       setShowWorkoutSelector(false);
     } else {
       // Show selector to choose or create
-      console.log('Showing workout selector');
       setShowWorkoutSelector(true);
       setShowWorkoutModal(false);
     }
@@ -110,43 +132,111 @@ function ProgrammingCalendar() {
         <Header />
         
         <main className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white mb-1">Programming Calendar</h1>
-            <p className="text-sm text-gray-400">Schedule and manage workouts by date</p>
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1">Programming Calendar</h1>
+              <p className="text-sm text-gray-400">Schedule and manage workouts by date</p>
+            </div>
+            <div className="relative create-dropdown-container">
+              <button
+                onClick={() => setShowCreateDropdown(!showCreateDropdown)}
+                className="px-4 py-2 bg-green-500 text-black font-semibold rounded-lg hover:bg-green-400 transition-colors flex items-center gap-2"
+              >
+                <span>➕</span>
+                <span>Create</span>
+                <span>▼</span>
+              </button>
+              
+              {showCreateDropdown && (
+                <div className="absolute right-0 top-full mt-2 bg-gray-900 border border-gray-800 rounded-lg z-50 min-w-[200px] overflow-hidden">
+                  <button
+                    onClick={() => {
+                      const today = new Date();
+                      setSelectedDate(today);
+                      setShowWorkoutSelector(true);
+                      setShowWorkoutModal(false);
+                      setShowCreateDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-800 text-white transition-colors"
+                  >
+                    Session
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Handle rest day - you can implement this later
+                      console.log('Create rest day');
+                      setShowCreateDropdown(false);
+                    }}
+                    className="w-full text-left px-4 py-3 hover:bg-gray-800 text-white transition-colors border-t border-gray-800"
+                  >
+                    Rest Day
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          {/* Calendar Header */}
-          <div className="flex justify-between items-center mb-6">
-            <button
-              onClick={handlePreviousMonth}
-              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              ← Previous
-            </button>
-            <h3 className="text-2xl font-bold text-white">
-              {format(currentMonth, 'MMMM yyyy')}
-            </h3>
-            <button
-              onClick={handleNextMonth}
-              className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Next →
-            </button>
-          </div>
+              {/* Calendar Header */}
+              <div className="flex justify-between items-center mb-4">
+                <button
+                  onClick={handlePreviousMonth}
+                  className="px-3 py-1.5 text-gray-400 hover:text-white transition-colors"
+                >
+                  ←
+                </button>
+                <div className="relative month-picker-container">
+                  <button
+                    onClick={() => setShowMonthPicker(!showMonthPicker)}
+                    className="text-lg font-bold text-white hover:text-green-400 transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-800/50"
+                  >
+                    {format(currentMonth, 'MMMM yyyy')}
+                  </button>
+                  
+                  {showMonthPicker && (
+                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-gray-900 border border-gray-800 rounded-lg p-4 z-50 min-w-[280px]">
+                      <div className="mb-4">
+                        <label className="block text-sm text-gray-400 mb-2">Select Month & Year</label>
+                        <input
+                          type="month"
+                          value={format(currentMonth, 'yyyy-MM')}
+                          onChange={(e) => {
+                            const [year, month] = e.target.value.split('-');
+                            setCurrentMonth(new Date(parseInt(year), parseInt(month) - 1, 1));
+                            setShowMonthPicker(false);
+                          }}
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-green-500"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setShowMonthPicker(false)}
+                        className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={handleNextMonth}
+                  className="px-3 py-1.5 text-gray-400 hover:text-white transition-colors"
+                >
+                  →
+                </button>
+              </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-2 mb-4">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div key={day} className="text-center font-semibold text-gray-400 py-2">
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+              <div key={day} className="text-center text-xs font-semibold text-gray-400 py-1">
                 {day}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-7 gap-2">
-            {/* Empty cells for days before month starts */}
-            {Array.from({ length: monthStart.getDay() }).map((_, i) => (
+          <div className="grid grid-cols-7 gap-1">
+            {/* Empty cells for days before month starts (Monday = 0) */}
+            {Array.from({ length: (monthStart.getDay() + 6) % 7 }).map((_, i) => (
               <div key={`empty-${i}`} className="aspect-square" />
             ))}
 
@@ -160,44 +250,43 @@ function ProgrammingCalendar() {
                 <button
                   key={day.toISOString()}
                   type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+                  onClick={() => {
+                    console.log('Calendar date clicked:', format(day, 'yyyy-MM-dd'));
                     handleDateClick(day);
                   }}
-                  className={`aspect-square border-2 rounded-lg p-2 text-left transition-colors bg-gray-800/50 cursor-pointer ${
+                  className={`aspect-square border rounded-lg p-1 text-center transition-colors bg-gray-800/50 cursor-pointer ${
                     isSelected
                       ? 'border-green-500 bg-green-500/20'
                       : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800'
-                  } ${isCurrentDay ? 'ring-2 ring-green-500' : ''} ${workout ? 'border-green-500/50' : ''}`}
+                  } ${isCurrentDay ? 'ring-1 ring-green-500' : ''} ${workout ? 'border-green-500/50' : ''}`}
                 >
-                  <div className={`text-sm font-semibold ${isCurrentDay ? 'text-green-500' : 'text-white'}`}>
+                  <div className={`text-xs font-semibold ${isCurrentDay ? 'text-green-500' : 'text-white'}`}>
                     {format(day, 'd')}
                   </div>
                   {workout && (
-                    <div className="mt-1 text-xs text-green-500 font-medium truncate">
+                    <div className="mt-0.5 text-[10px] text-green-500 font-medium truncate px-0.5">
                       {workout.name}
-                    </div>
-                  )}
-                  {!workout && (
-                    <div className="mt-1 text-xs text-gray-500">
-                      Click to add
                     </div>
                   )}
                 </button>
               );
             })}
           </div>
-        </div>
+            </div>
+          </div>
+        </main>
 
         {/* Workout Selector Modal - Choose from library or create new */}
-        {showWorkoutSelector && selectedDate && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]" onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowWorkoutSelector(false);
-              setSelectedDate(null);
-            }
-          }}>
+        {showWorkoutSelector && selectedDate ? (
+          <div 
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]" 
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowWorkoutSelector(false);
+                setSelectedDate(null);
+              }
+            }}
+          >
             <div 
               className="bg-gray-900 border border-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
@@ -392,7 +481,7 @@ function ProgrammingCalendar() {
               )}
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Workout Details Modal - View/Edit existing scheduled workout */}
         {showWorkoutModal && selectedDate && getWorkoutForDate(selectedDate) && (
@@ -457,7 +546,6 @@ function ProgrammingCalendar() {
             </div>
           </div>
         )}
-        </main>
       </div>
     </div>
   );

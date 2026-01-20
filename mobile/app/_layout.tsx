@@ -1,18 +1,31 @@
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { AuthProvider } from '@/contexts/AuthContext';
+import { View, Text, StyleSheet } from 'react-native';
+import { Colors } from '@/constants/colors';
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="auth" />
-        <Stack.Screen name="workout/[id]" />
-        <Stack.Screen name="logbook" />
-      </Stack>
-    </AuthProvider>
+    <View style={styles.container}>
+      <Text style={styles.text}>Protocol App</Text>
+      <Text style={styles.subtext}>If you see this, React Native Web is working!</Text>
+    </View>
   );
 }
 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.black,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  text: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: Colors.white,
+    marginBottom: 20,
+  },
+  subtext: {
+    fontSize: 18,
+    color: Colors.green,
+  },
+});
